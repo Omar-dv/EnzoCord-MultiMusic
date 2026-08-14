@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getConfig } from '@enzocord/config';
-import { createSession } from '@/lib/auth';
+import { createSession, SESSION_COOKIE_NAME } from '@/lib/auth';
 import { db } from '@enzocord/database';
 import { logger } from '@enzocord/shared';
 
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     const userData = await userResponse.json();
 
-    // Check User ID against ownerId in .env
+    // Check User ID against ownerId in .env (only if ownerId is configured)
     if (config.ownerId && userData.id !== config.ownerId) {
       logger.warn(`Unauthorized login attempt by Discord ID ${userData.id} (@${userData.username})`);
       return NextResponse.redirect(getSafeRedirectUrl('/access-denied', request, config.callbackUrl));
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Create session & HTTP-only cookie
-    await createSession(userData.id);
+    const { token, expiresAt } = await createSession(userData.id);
 
     await db.auditLog.create({
       data: {
@@ -120,11 +120,19 @@ export async function GET(request: NextRequest) {
 
     // Check if service already deployed or needs wizard
     const service = await db.service.findFirst();
-    if (service && service.status === 'ONLINE') {
-      return NextResponse.redirect(getSafeRedirectUrl('/dashboard', request, config.callbackUrl));
-    } else {
-      return NextResponse.redirect(getSafeRedirectUrl('/wizard', request, config.callbackUrl));
-    }
+    const targetPath = service && service.status === 'ONLINE' ? '/dashboard' : '/wizard';
+    const redirectUrl = getSafeRedirectUrl(targetPath, request, config.callbackUrl);
+
+    const response = NextResponse.redirect(redirectUrl);
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: false, // Ensure cookies are stored on HTTP hostings (Pterodactyl/IP) as well as HTTPS
+      sameSite: 'lax',
+      expires: expiresAt,
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     logger.error('OAuth Callback exception:', error);
     return NextResponse.redirect(getSafeRedirectUrl('/?error=server_error', request, config.callbackUrl));

@@ -3,7 +3,7 @@ import { db } from '@enzocord/database';
 import { getConfig } from '@enzocord/config';
 import crypto from 'crypto';
 
-const SESSION_COOKIE_NAME = 'enzocord_session';
+export const SESSION_COOKIE_NAME = 'enzocord_session';
 
 export async function getSession() {
   const cookieStore = cookies();
@@ -23,7 +23,7 @@ export async function getSession() {
   }
 
   const ownerConfig = getConfig();
-  if (session.userId !== ownerConfig.ownerId) {
+  if (ownerConfig.ownerId && session.userId !== ownerConfig.ownerId) {
     return null;
   }
 
@@ -49,15 +49,19 @@ export async function createSession(userId: string) {
     },
   });
 
-  cookies().set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    expires: expiresAt,
-    path: '/',
-  });
+  try {
+    cookies().set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: false, // Ensure cookies are stored on HTTP hostings (Pterodactyl/IP) as well as HTTPS
+      sameSite: 'lax',
+      expires: expiresAt,
+      path: '/',
+    });
+  } catch {
+    // In case called outside route handler context
+  }
 
-  return token;
+  return { token, expiresAt };
 }
 
 export async function destroySession() {
@@ -66,6 +70,8 @@ export async function destroySession() {
 
   if (sessionToken) {
     await db.session.delete({ where: { token: sessionToken } }).catch(() => null);
-    cookies().delete(SESSION_COOKIE_NAME);
+    try {
+      cookies().delete(SESSION_COOKIE_NAME);
+    } catch {}
   }
 }
