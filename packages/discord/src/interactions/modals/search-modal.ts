@@ -28,6 +28,15 @@ export async function handleSearchModalSubmit(
       return;
     }
 
+    // Verify Lavalink node is actually connected
+    const hasNode = Array.from(kazagumo.shoukaku.nodes.values()).some((n: any) => n.state === 1);
+    if (!hasNode) {
+      await interaction.editReply({
+        content: '❌ **سيرفر Lavalink غير متصل حالياً.**\nيرجى التأكد من تشغيل سيرفر Lavalink.',
+      });
+      return;
+    }
+
     // Get or create player
     let player = kazagumo.getPlayer(guildId);
     if (!player) {

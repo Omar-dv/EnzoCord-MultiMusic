@@ -179,8 +179,17 @@ export class MusicManager {
   public async searchTrack(botId: string, rawQuery: string, requester?: any): Promise<any> {
     let cleanQuery = rawQuery.trim();
 
-    // 1. YouTube URLs: Fetch exact title & author via YouTube oEmbed
+    const kazagumo = this.getKazagumo(botId) || Array.from(this.kazagumoInstances.values())[0];
+    if (!kazagumo) {
+      throw new Error(`Kazagumo not initialized for bot ${botId}`);
+    }
+
+    // 1. YouTube URLs → pass directly to Lavalink v4 (it handles them natively)
     if (cleanQuery.includes('youtube.com/') || cleanQuery.includes('youtu.be/')) {
+      logger.info(`[MusicManager] Loading YouTube URL directly via Lavalink: ${cleanQuery}`);
+      const result = await kazagumo.search(cleanQuery, { requester });
+      if (result && result.tracks.length > 0) return result;
+      // If direct URL load fails, try extracting title via oEmbed as fallback
       try {
         const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(cleanQuery)}&format=json`;
         const res = await fetch(oembedUrl);
@@ -188,14 +197,15 @@ export class MusicManager {
           const data: any = await res.json();
           if (data.title) {
             cleanQuery = `${data.title} ${data.author_name || ''}`.trim();
+            logger.info(`[MusicManager] YouTube URL fallback to text search: "${cleanQuery}"`);
           }
         }
       } catch (err) {
-        logger.warn('[MusicManager] YouTube oEmbed fetch error, falling back to raw query:', err);
+        logger.warn('[MusicManager] YouTube oEmbed fetch error:', err);
       }
     }
-    // 2. Spotify URLs: Fetch title via Spotify oEmbed
-    else if (cleanQuery.includes('open.spotify.com/track/')) {
+    // 2. Spotify URLs → fetch title via oEmbed, then search on YouTube
+    else if (cleanQuery.includes('open.spotify.com/')) {
       try {
         const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(cleanQuery)}`;
         const res = await fetch(oembedUrl);
@@ -203,19 +213,18 @@ export class MusicManager {
           const data: any = await res.json();
           if (data.title) {
             cleanQuery = `${data.title} ${data.author_name || ''}`.trim();
+            logger.info(`[MusicManager] Spotify → YouTube search: "${cleanQuery}"`);
           }
         }
-      } catch {}
+      } catch {
+        logger.warn('[MusicManager] Spotify oEmbed fetch error, using raw query');
+      }
     }
 
-    const kazagumo = this.getKazagumo(botId) || Array.from(this.kazagumoInstances.values())[0];
-    if (!kazagumo) {
-      throw new Error(`Kazagumo not initialized for bot ${botId}`);
-    }
-
+    // Search via YouTube (default engine)
     let result = await kazagumo.search(cleanQuery, { requester });
     if (!result || result.tracks.length === 0) {
-      // Fallback search with ytsearch prefix
+      // Fallback: explicit ytsearch prefix
       result = await kazagumo.search(`ytsearch:${cleanQuery}`, { requester });
     }
     return result;

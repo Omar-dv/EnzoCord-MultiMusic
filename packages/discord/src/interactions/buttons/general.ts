@@ -110,6 +110,16 @@ export async function handleConnectButton(
     return;
   }
 
+  // Verify Lavalink node is actually connected
+  const hasNode = Array.from(kazagumo.shoukaku.nodes.values()).some((n: any) => n.state === 1);
+  if (!hasNode) {
+    await interaction.reply({
+      content: '❌ **سيرفر Lavalink غير متصل حالياً.**\nيرجى التأكد من تشغيل سيرفر Lavalink.',
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   let player = kazagumo.getPlayer(guildId);
 
   if (isCurrentlyInVC && player && player.voiceId === voiceChannelId) {

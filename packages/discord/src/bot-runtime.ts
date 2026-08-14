@@ -95,6 +95,21 @@ export async function setupBotRuntime(client: Client, botId: string): Promise<vo
   };
 
   const ensurePlayerAndJoin = async () => {
+    // Verify at least one Lavalink node is connected
+    const hasNode = Array.from(kazagumo.shoukaku.nodes.values()).some((n) => n.state === 1);
+    if (!hasNode) {
+      logger.warn(`[Bot ${botId}] No Lavalink node connected yet, waiting for node ready...`);
+      // Deploy the Control Panel even without the player
+      const room = await getControlRoom();
+      if (room) {
+        const msgId = await controlPanelService.sendOrUpdate(room, botId, guildId, botRecord.controlMessageId);
+        if (msgId && msgId !== botRecord.controlMessageId) {
+          botRecord.controlMessageId = msgId;
+        }
+      }
+      return;
+    }
+
     try {
       let player = kazagumo.getPlayer(guildId);
       if (!player) {
@@ -127,7 +142,7 @@ export async function setupBotRuntime(client: Client, botId: string): Promise<vo
     }
   };
 
-  // Wait for Lavalink node ready
+  // Wait for Lavalink node ready — also handle reconnections
   const hasConnectedNode = Array.from(kazagumo.shoukaku.nodes.values()).some((n) => n.state === 1);
   if (hasConnectedNode) {
     ensurePlayerAndJoin();
@@ -136,6 +151,12 @@ export async function setupBotRuntime(client: Client, botId: string): Promise<vo
       ensurePlayerAndJoin();
     });
   }
+
+  // Also re-join on reconnection after disconnect
+  kazagumo.shoukaku.on('ready', (name) => {
+    logger.info(`[Bot ${botId}] Lavalink node [${name}] reconnected, re-joining voice channel...`);
+    ensurePlayerAndJoin();
+  });
 
   // ─── 2. Player Event Handlers & Voice Status ────────────────────────
   kazagumo.removeAllListeners('playerStart');
