@@ -11,6 +11,8 @@
     "dev": "npm run dev --workspace=apps/dashboard",
     "build": "npm run build --workspace=apps/dashboard",
     "start": "npm run start --workspace=apps/dashboard",
+    "setup": "prisma generate && prisma db push && npm run build",
+    "production": "prisma generate && prisma db push && npm run build && npm run start",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio"
