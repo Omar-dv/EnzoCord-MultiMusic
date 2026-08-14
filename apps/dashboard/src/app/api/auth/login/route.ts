@@ -8,7 +8,7 @@ export async function GET() {
   
   if (!config.clientId || !config.callbackUrl) {
     return NextResponse.json(
-      { error: 'Discord OAuth credentials missing in config.json' },
+      { error: 'Discord OAuth credentials missing in .env' },
       { status: 500 }
     );
   }

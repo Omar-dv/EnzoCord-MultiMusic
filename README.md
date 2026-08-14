@@ -22,6 +22,7 @@
 - **Lavalink v4 Integration**: Low-latency, high-quality audio streaming powered by Kazagumo & Shoukaku.
 - **Live Interactive Progress Loop**: Throttled progress bar updates with real-time timestamps and dynamic voice channel statuses.
 - **Full Web Dashboard**: Next.js 14 web control panel with OAuth2 Discord login, server selection, and real-time player controls.
+- **Zero JSON Configs**: 100% configured via a single, simple `.env` file.
 
 ---
 
@@ -61,11 +62,9 @@ npx prisma db push
 Copy `.env.example` to `.env` and fill in your credentials:
 ```bash
 cp .env.example .env
-cp config.example.json config.json
-cp lavalink.example.json lavalink.json
 ```
 
-Configure your Discord OAuth2 and Lavalink Node details in `.env`:
+Configure your Discord OAuth2 and Lavalink Node details inside `.env`:
 ```env
 DISCORD_CLIENT_ID=your_client_id
 DISCORD_CLIENT_SECRET=your_client_secret
@@ -98,7 +97,7 @@ npm start
 ├── apps/
 │   └── dashboard/         # Next.js 14 Web Dashboard & API Routes
 ├── packages/
-│   ├── config/            # Shared configuration loaders (.env, json)
+│   ├── config/            # Pure .env configuration loader
 │   ├── database/          # Prisma Client & SQLite schema
 │   ├── discord/           # Discord.js bot runtime, handlers & control panel
 │   ├── music/             # Kazagumo / Lavalink audio manager & resolvers

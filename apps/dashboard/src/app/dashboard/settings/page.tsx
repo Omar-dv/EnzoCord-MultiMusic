@@ -47,7 +47,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <h2 className="text-lg font-bold text-white">General Configuration</h2>
-            <p className="text-xs text-slate-500 font-mono">Main settings defined in config.json</p>
+            <p className="text-xs text-slate-500 font-mono">Main settings loaded from .env environment</p>
           </div>
         </div>
 

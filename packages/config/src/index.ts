@@ -12,9 +12,7 @@ function getCandidatePaths(filename: string): string[] {
 }
 
 /**
- * Next loads an .env file from its app directory, while this repository keeps
- * its source of truth at the workspace root. Load that root file here as well
- * so the same settings work for Next, scripts, and package-level code.
+ * Loads the root .env file across Next.js, scripts, and package-level code.
  */
 function loadEnvironmentFile(): void {
   const envPath = getCandidatePaths('.env').find((candidate) => fs.existsSync(candidate));
@@ -49,104 +47,35 @@ function loadEnvironmentFile(): void {
 
 loadEnvironmentFile();
 
-function findConfigFile(filename: string): string | null {
-  const candidatePaths = getCandidatePaths(filename);
-
-  // Prefer paths where config.json has populated clientId if searching for config.json
-  for (const p of candidatePaths) {
-    if (fs.existsSync(p)) {
-      try {
-        const content = fs.readFileSync(p, 'utf-8');
-        const parsed = JSON.parse(content);
-        if (filename === 'config.json' && parsed.clientId) {
-          return p;
-        }
-        if (filename === 'lavalink.json' && parsed.nodes) {
-          return p;
-        }
-      } catch {
-        // continue
-      }
-    }
-  }
-
-  // Fallback to first existing path
-  for (const p of candidatePaths) {
-    if (fs.existsSync(p)) return p;
-  }
-
-  return null;
-}
-
 export function getConfig(): AppConfig {
-  const configPath = findConfigFile('config.json');
-  let parsed: Partial<AppConfig> = {};
-
-  if (configPath) {
-    try {
-      parsed = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    } catch (error) {
-      logger.error('Failed to parse config.json:', error);
-      throw new Error('Invalid config.json format');
-    }
-  }
-
-  const configuredPort = Number(process.env.PORT || parsed.port || 3000);
+  loadEnvironmentFile();
+  const configuredPort = Number(process.env.PORT || 3000);
   return {
-    clientId: process.env.DISCORD_CLIENT_ID || parsed.clientId || '',
-    clientSecret: process.env.DISCORD_CLIENT_SECRET || parsed.clientSecret || '',
-    ownerId: process.env.DISCORD_OWNER_ID || parsed.ownerId || '',
+    clientId: process.env.DISCORD_CLIENT_ID || '',
+    clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
+    ownerId: process.env.DISCORD_OWNER_ID || '',
     port: Number.isInteger(configuredPort) && configuredPort > 0 ? configuredPort : 3000,
     callbackUrl:
-      process.env.DISCORD_CALLBACK_URL || parsed.callbackUrl || 'http://localhost:3000/api/auth/callback',
+      process.env.DISCORD_CALLBACK_URL || 'http://localhost:3000/api/auth/callback',
   };
 }
 
 export function getLavalinkConfig(): LavalinkConfig {
-  const lavalinkPath = findConfigFile('lavalink.json');
-  let fileConfig: LavalinkConfig = { nodes: [] };
-
-  if (lavalinkPath) {
-    try {
-      fileConfig = JSON.parse(fs.readFileSync(lavalinkPath, 'utf-8'));
-    } catch (error) {
-      logger.error('Failed to parse lavalink.json:', error);
-    }
-  }
-
-  const fallbackNode = fileConfig.nodes[0] || {
-    name: 'Default Lavalink',
-    host: '127.0.0.1',
-    port: 2333,
-    auth: 'youshallnotpass',
-    secure: false,
-  };
-
-  const hasEnvironmentNode = Boolean(
-    process.env.LAVALINK_HOST ||
-      process.env.LAVALINK_PORT ||
-      process.env.LAVALINK_AUTH ||
-      process.env.LAVALINK_NODE_NAME
-  );
-
-  if (!hasEnvironmentNode) {
-    return fileConfig.nodes.length ? fileConfig : { nodes: [fallbackNode] };
-  }
-
-  const configuredPort = Number(process.env.LAVALINK_PORT || fallbackNode.port);
+  loadEnvironmentFile();
+  const configuredPort = Number(process.env.LAVALINK_PORT || 2333);
   const secureValue = process.env.LAVALINK_SECURE?.trim().toLowerCase();
   const secure =
     secureValue === undefined
-      ? Boolean(fallbackNode.secure)
+      ? false
       : ['true', '1', 'yes', 'on'].includes(secureValue);
 
   return {
     nodes: [
       {
-        name: process.env.LAVALINK_NODE_NAME || fallbackNode.name,
-        host: process.env.LAVALINK_HOST || fallbackNode.host,
-        port: Number.isInteger(configuredPort) && configuredPort > 0 ? configuredPort : fallbackNode.port,
-        auth: process.env.LAVALINK_AUTH || fallbackNode.auth,
+        name: process.env.LAVALINK_NODE_NAME || 'EnzoCord Lavalink Node',
+        host: process.env.LAVALINK_HOST || '127.0.0.1',
+        port: Number.isInteger(configuredPort) && configuredPort > 0 ? configuredPort : 2333,
+        auth: process.env.LAVALINK_AUTH || 'youshallnotpass',
         secure,
       },
     ],
