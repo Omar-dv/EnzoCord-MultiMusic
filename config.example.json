@@ -1,0 +1,7 @@
+{
+  "clientId": "YOUR_DISCORD_CLIENT_ID",
+  "clientSecret": "YOUR_DISCORD_CLIENT_SECRET",
+  "ownerId": "YOUR_DISCORD_OWNER_ID",
+  "port": 3000,
+  "callbackUrl": "http://localhost:3000/api/auth/callback"
+}

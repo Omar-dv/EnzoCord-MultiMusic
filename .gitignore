@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js build output
+.next/
+out/
+
+# TypeScript build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Local secrets & configs
+.env
+.env.local
+.env.*.local
+config.json
+lavalink.json
+!.env.example
+!config.example.json
+!lavalink.example.json
+
+# Local SQLite databases & journals
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+prisma/*.db
+prisma/*.db-journal
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "name": "Default Lavalink",
+      "host": "127.0.0.1",
+      "port": 2333,
+      "auth": "youshallnotpass",
+      "secure": false
+    }
+  ]
+}

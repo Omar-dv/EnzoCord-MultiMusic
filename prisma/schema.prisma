@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Owner {
+  id        String   @id
+  username  String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Service {
+  id            String       @id @default(uuid())
+  name          String       @default("EnzoCord Multi Music")
+  status        String       @default("STOPPED") // STOPPED, DEPLOYING, ONLINE, ERROR
+  botCount      Int          @default(0)
+  targetGuildId String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  bots          Bot[]
+  deployments   Deployment[]
+}
+
+model Bot {
+  id               String   @id // Discord Application Client ID
+  name             String
+  token            String
+  avatar           String?
+  status           String   @default("OFFLINE") // OFFLINE, VERIFIED, ONLINE, ERROR
+  uptime           DateTime?
+  serviceId        String?
+  service          Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  guildId          String?
+  categoryId       String?
+  voiceChannelId   String?
+  controlChannelId String?
+  controlMessageId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Guild {
+  id        String   @id
+  name      String
+  icon      String?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Deployment {
+  id        String   @id @default(uuid())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  guildId   String
+  status    String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  logs      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DiscordResource {
+  id        String   @id @default(uuid())
+  botId     String
+  guildId   String
+  type      String   // CATEGORY, VOICE_CHANNEL, CONTROL_CHANNEL, CONTROL_MESSAGE
+  discordId String
+  createdAt DateTime @default(now())
+}
+
+model MusicSession {
+  id               String   @id @default(uuid())
+  botId            String   @unique
+  guildId          String
+  voiceChannelId   String
+  controlMessageId String?
+  currentTrack     String?  // JSON stringified track info
+  position         Int      @default(0)
+  volume           Int      @default(100)
+  isPaused         Boolean  @default(false)
+  isAutoplay       Boolean  @default(false)
+  repeatMode       String   @default("OFF") // OFF, TRACK, QUEUE
+  isShuffled       Boolean  @default(false)
+  queue            String   @default("[]") // JSON stringified tracks array
+  updatedAt        DateTime @updatedAt
+}
+
+model Controller {
+  id           String    @id @default(uuid())
+  botId        String    @unique
+  guildId      String
+  channelId    String
+  userId       String?   // Backward-compatibility alias for main controller ID
+  username     String?   // Backward-compatibility alias for main controller username
+  mainUserId   String?
+  mainUsername String?
+  subUserId    String?
+  subUsername  String?
+  assignedAt   DateTime? @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  userId    String?
+  ip        String?
+  createdAt DateTime @default(now())
+}

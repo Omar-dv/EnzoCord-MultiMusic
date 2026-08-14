@@ -1,0 +1,48 @@
+{
+  "name": "enzocord-multi-music",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EnzoCord Multi Music - Discord Multi Bot Control Panel",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/dashboard",
+    "build": "npm run build --workspace=apps/dashboard",
+    "start": "npm run start --workspace=apps/dashboard",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.2",
+    "@prisma/client": "^5.22.0",
+    "clsx": "^2.1.1",
+    "cookie": "^0.6.0",
+    "discord.js": "^14.16.3",
+    "framer-motion": "^11.11.17",
+    "kazagumo": "^3.0.4",
+    "lucide-react": "^0.460.0",
+    "next": "^14.2.18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "shoukaku": "^4.1.0",
+    "sodium-native": "^5.1.0",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@types/cookie": "^0.6.0",
+    "@types/node": "^20.17.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.6.3"
+  },
+  "optionalDependencies": {
+    "@next/swc-win32-x64-msvc": "^16.3.0"
+  }
+}
