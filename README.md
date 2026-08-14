@@ -74,8 +74,8 @@ DISCORD_CALLBACK_URL=http://localhost:3000/api/auth/callback
 
 LAVALINK_NODE_NAME="EnzoCord Lavalink Node"
 LAVALINK_HOST=node.enzocord-host.tech
-LAVALINK_PORT=25002
-LAVALINK_AUTH=youshallnotpass
+LAVALINK_PORT=25165
+LAVALINK_AUTH=omar
 LAVALINK_SECURE=false
 ```
 
