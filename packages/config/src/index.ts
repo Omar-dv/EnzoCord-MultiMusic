@@ -49,7 +49,7 @@ loadEnvironmentFile();
 
 export function getConfig(): AppConfig {
   loadEnvironmentFile();
-  const configuredPort = Number(process.env.PORT || 3000);
+  const configuredPort = Number(process.env.PORT || process.env.SERVER_PORT || 3000);
   return {
     clientId: process.env.DISCORD_CLIENT_ID || '',
     clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
