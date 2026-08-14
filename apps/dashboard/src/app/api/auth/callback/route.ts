@@ -6,15 +6,45 @@ import { logger } from '@enzocord/shared';
 
 export const dynamic = 'force-dynamic';
 
+function getSafeRedirectUrl(targetPath: string, request: NextRequest, configuredCallbackUrl?: string): URL {
+  // 1. If configured DISCORD_CALLBACK_URL in .env has a valid origin (not 0.0.0.0), use its origin
+  if (configuredCallbackUrl) {
+    try {
+      const parsed = new URL(configuredCallbackUrl);
+      if (parsed.hostname && parsed.hostname !== '0.0.0.0') {
+        return new URL(targetPath, parsed.origin);
+      }
+    } catch {}
+  }
+
+  // 2. Extract from Host or X-Forwarded-Host header sent by the user's browser
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const host = request.headers.get('host');
+  const proto = request.headers.get('x-forwarded-proto') || (request.url.startsWith('https:') ? 'https' : 'http');
+  const activeHost = forwardedHost || host;
+
+  if (activeHost && !activeHost.startsWith('0.0.0.0')) {
+    return new URL(targetPath, `${proto}://${activeHost}`);
+  }
+
+  // 3. Fallback to request.nextUrl while replacing 0.0.0.0 with localhost
+  const url = request.nextUrl.clone();
+  url.pathname = targetPath;
+  url.search = '';
+  if (url.hostname === '0.0.0.0') {
+    url.hostname = 'localhost';
+  }
+  return url;
+}
+
 export async function GET(request: NextRequest) {
+  const config = getConfig();
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
 
   if (!code) {
-    return NextResponse.redirect(new URL('/?error=missing_code', request.url));
+    return NextResponse.redirect(getSafeRedirectUrl('/?error=missing_code', request, config.callbackUrl));
   }
-
-  const config = getConfig();
 
   try {
     // Exchange code for token
@@ -35,7 +65,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
       const err = await tokenResponse.text();
       logger.error('Discord OAuth token exchange failed:', err);
-      return NextResponse.redirect(new URL('/?error=token_exchange_failed', request.url));
+      return NextResponse.redirect(getSafeRedirectUrl('/?error=token_exchange_failed', request, config.callbackUrl));
     }
 
     const tokenData = await tokenResponse.json();
@@ -48,15 +78,15 @@ export async function GET(request: NextRequest) {
     });
 
     if (!userResponse.ok) {
-      return NextResponse.redirect(new URL('/?error=user_fetch_failed', request.url));
+      return NextResponse.redirect(getSafeRedirectUrl('/?error=user_fetch_failed', request, config.callbackUrl));
     }
 
     const userData = await userResponse.json();
 
-    // Step 5: Check User ID against ownerId in config.json
+    // Check User ID against ownerId in .env
     if (config.ownerId && userData.id !== config.ownerId) {
       logger.warn(`Unauthorized login attempt by Discord ID ${userData.id} (@${userData.username})`);
-      return NextResponse.redirect(new URL('/access-denied', request.url));
+      return NextResponse.redirect(getSafeRedirectUrl('/access-denied', request, config.callbackUrl));
     }
 
     // Upsert Owner in DB
@@ -91,12 +121,12 @@ export async function GET(request: NextRequest) {
     // Check if service already deployed or needs wizard
     const service = await db.service.findFirst();
     if (service && service.status === 'ONLINE') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      return NextResponse.redirect(getSafeRedirectUrl('/dashboard', request, config.callbackUrl));
     } else {
-      return NextResponse.redirect(new URL('/wizard', request.url));
+      return NextResponse.redirect(getSafeRedirectUrl('/wizard', request, config.callbackUrl));
     }
   } catch (error) {
     logger.error('OAuth Callback exception:', error);
-    return NextResponse.redirect(new URL('/?error=server_error', request.url));
+    return NextResponse.redirect(getSafeRedirectUrl('/?error=server_error', request, config.callbackUrl));
   }
 }
