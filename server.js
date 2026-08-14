@@ -84,10 +84,10 @@ app.prepare().then(() => {
   });
 
   server.listen(port, hostname, () => {
-    console.log(`\n🎉 EnzoCord Multi Music is ONLINE and listening!`);
-    console.log(`👉 Local:     http://localhost:${port}`);
-    console.log(`👉 Network:   http://${hostname}:${port}`);
-    console.log(`👉 Hosting:   Accessible on your server's Public IP / Domain on port ${port}\n`);
+    console.log(`\n🎉 EnzoCord Multi Music is ONLINE and listening on port ${port}!`);
+    console.log(`👉 Local (Your PC):        http://localhost:${port}`);
+    console.log(`👉 Hosting (VPS/Ptero):     http://<YOUR_SERVER_IP>:${port}`);
+    console.log(`⚠️  Important: In your browser, use 'localhost' or your server IP. Do NOT type 0.0.0.0 in the browser.\n`);
   });
 }).catch((err) => {
   console.error('Failed to initialize Next.js dashboard:', err);
